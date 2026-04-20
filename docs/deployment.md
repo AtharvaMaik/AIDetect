@@ -1,5 +1,14 @@
 # Deployment
 
+## Live URLs
+
+```text
+Public app: https://frontend-navy-seven-60.vercel.app
+Backend API: https://clashking-aidetect.hf.space
+Backend health: https://clashking-aidetect.hf.space/health
+Hugging Face Space: https://huggingface.co/spaces/clashking/AIDetect
+```
+
 ## Backend on Hugging Face Spaces
 
 1. Create a new Hugging Face Space.

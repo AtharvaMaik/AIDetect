@@ -10,6 +10,13 @@ app_port: 7860
 
 A full-stack AI-text detector built from a fine-tuned RoBERTa sequence classification model. The app analyzes pasted text or text files, splits long documents into overlapping token windows, reports an overall Human/AI probability, and flags grouped regions with unusually high AI probability.
 
+## Live Project
+
+- Public app: https://frontend-navy-seven-60.vercel.app
+- Backend API: https://clashking-aidetect.hf.space
+- Backend health check: https://clashking-aidetect.hf.space/health
+- Hugging Face Space: https://huggingface.co/spaces/clashking/AIDetect
+
 ## Project Structure
 
 ```text

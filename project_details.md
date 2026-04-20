@@ -22,6 +22,13 @@ The intended deployment path is:
 - Frontend on Vercel.
 - Large model file tracked with Git LFS or hosted through Hugging Face model/Space storage.
 
+Current live deployment:
+
+- Public app: `https://frontend-navy-seven-60.vercel.app`
+- Backend API: `https://clashking-aidetect.hf.space`
+- Backend health check: `https://clashking-aidetect.hf.space/health`
+- Hugging Face Space: `https://huggingface.co/spaces/clashking/AIDetect`
+
 ## 2. Current Folder Structure
 
 ```text
