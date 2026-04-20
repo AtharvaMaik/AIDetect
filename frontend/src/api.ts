@@ -1,6 +1,8 @@
 import type { AnalyzeResponse } from "./types";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:7860";
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? "https://clashking-aidetect.hf.space" : "http://127.0.0.1:7860");
 
 export async function analyzeText(text: string): Promise<AnalyzeResponse> {
   const response = await fetch(`${API_URL}/predict`, {
