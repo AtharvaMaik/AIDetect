@@ -1,6 +1,6 @@
 ---
 title: RoBERTa AI Text Detector API
-colorFrom: teal
+colorFrom: green
 colorTo: red
 sdk: docker
 app_port: 7860
