@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+.venv/
+venv/
+.env
+.env.local
+node_modules/
+dist/
+.DS_Store
+
+# Training artifacts are not needed for inference deployment.
+roberta_ai_detector/
+.ipynb_checkpoints/
+*.pt
+*.pth
+*.bin
+
+# Keep the final safetensors model, but use Git LFS or Hugging Face Hub for hosting.
+model/**/*.safetensors
+!model/roberta_ai_detector_final/model.safetensors
