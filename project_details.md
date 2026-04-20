@@ -663,7 +663,9 @@ Contains the main interface:
 Defines the API base URL:
 
 ```typescript
-const API_URL = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:7860";
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? "https://clashking-aidetect.hf.space" : "http://127.0.0.1:7860");
 ```
 
 For local development, it calls:
@@ -672,11 +674,14 @@ For local development, it calls:
 http://127.0.0.1:7860
 ```
 
-For Vercel deployment, set:
+For Vercel production, it falls back to:
 
 ```text
-VITE_API_URL=https://your-huggingface-space.hf.space
+https://clashking-aidetect.hf.space
 ```
+
+`VITE_API_URL` can still be set if a future deployment needs to point the frontend at a
+different backend.
 
 ### `types.ts`
 
@@ -1079,7 +1084,136 @@ Hugging Face Spaces is better for the backend because:
 - it supports large model files through Git LFS
 - free CPU hardware can run quantized inference for demos
 
-## 28. API Response Design
+## 28. Why This Stack Was Chosen
+
+This project was designed as a deployable ML product, not only as a training notebook. The
+stack choices are intentionally practical: they keep the system lightweight enough for free
+hosting while still looking and behaving like a real application.
+
+### FastAPI instead of Django
+
+FastAPI was chosen because this backend is an inference API, not a traditional content
+management or database-heavy web application.
+
+FastAPI fits this use case well because:
+
+- it has first-class request and response validation through Pydantic
+- it automatically generates OpenAPI documentation
+- it is lightweight and starts quickly
+- it works naturally with typed Python code
+- it is easy to containerize for a single-purpose ML service
+- it avoids bringing in an ORM, admin panel, templating system, and large project structure
+  that this app does not need
+
+Django is excellent when the application needs built-in authentication, relational database
+models, an admin dashboard, server-rendered pages, permissions, migrations, and a larger
+monolithic product structure. This project does not need those features in the inference
+layer. Using Django here would make the service heavier without improving model serving.
+
+Flask would also work, but FastAPI gives stronger typed schemas and better generated API
+docs out of the box. For an ML API that accepts structured inputs and returns structured
+model results, those built-in contracts are useful.
+
+### Vite React instead of a full server-rendered framework
+
+The frontend is a static client application. It does not need server-side rendering,
+database access, user accounts, or private backend logic. Vite React was chosen because it
+is fast, simple, and produces a clean static build that Vercel can host easily.
+
+Next.js would be a good choice if the project needed server-rendered routes, authenticated
+dashboards, API routes colocated with pages, SEO-heavy content, or database-backed user
+flows. This project only needs a smooth browser interface that calls a separate ML backend,
+so Vite keeps the frontend smaller and easier to reason about.
+
+Plain HTML and JavaScript would have been enough for a basic demo, but React and TypeScript
+make the UI easier to grow. The response includes nested data such as chunk results and
+suspicious regions, so typed frontend models reduce mistakes when rendering the analysis.
+
+### Hugging Face Spaces instead of generic app hosting for the backend
+
+The backend serves a large transformer model, so the hosting target needs to tolerate model
+artifacts, Python ML dependencies, a container build, and CPU inference.
+
+Hugging Face Spaces was chosen because:
+
+- it is built around ML demos and model-serving apps
+- it supports Docker Spaces
+- it handles large model files better than typical serverless frontend hosts
+- it provides a public URL that can be used directly by the frontend
+- it is a credible platform for showcasing machine learning projects
+- the free CPU tier is enough for a demo when dynamic quantization is enabled
+
+Render, Railway, and Fly.io are all valid alternatives for container hosting. They may be
+better for always-on production services, custom domains, persistent databases, background
+workers, or paid reliability. For this project, Hugging Face was the better fit because the
+core asset is a transformer model and the project benefits from living in the same ecosystem
+as the model tooling.
+
+### Vercel instead of serving the frontend from FastAPI
+
+The frontend and backend were deployed separately because each side has different runtime
+needs.
+
+Vercel is ideal for the React frontend because:
+
+- it serves static frontend assets quickly
+- it builds Vite projects cleanly
+- it gives a stable public URL with almost no infrastructure work
+- it avoids making the ML container also handle static asset hosting
+
+FastAPI could serve the frontend files, but that would couple the UI release cycle to the
+model-serving container. Keeping them separate makes the architecture cleaner: Vercel owns
+the browser experience, and Hugging Face owns the ML inference runtime.
+
+### Docker instead of a manual server setup
+
+Docker was chosen because the backend depends on a specific Python ML environment, model
+files, and system-level runtime behavior. A Dockerfile makes that environment repeatable.
+
+This matters because ML projects often fail during deployment for reasons unrelated to the
+model itself: dependency versions, file paths, ports, missing runtime packages, or mismatched
+local and cloud environments. Docker makes the Space build closer to the local backend
+setup and documents exactly how the service starts.
+
+### Fine-tuned RoBERTa instead of calling an external LLM API
+
+The project uses a local fine-tuned classifier rather than an external LLM API because the
+task is classification, not generation.
+
+That choice has several advantages:
+
+- inference does not depend on a paid third-party generation API
+- the model can run inside the deployed backend
+- results are more reproducible than prompt-based classification
+- the architecture demonstrates actual model fine-tuning and packaging
+- the deployment can be shown publicly without exposing an API key
+
+An LLM API could be useful for explanations, rubric-style review, or a second opinion, but
+it would add cost, latency, and secret-management requirements. For this portfolio project,
+the stronger signal is showing that a model was trained, packaged, optimized, deployed, and
+served through a real API.
+
+### Dynamic quantization instead of full precision inference
+
+The public backend runs on CPU. Dynamic quantization was added because it can reduce memory
+pressure and improve CPU inference practicality without requiring GPU hardware.
+
+Full precision inference is useful during evaluation and when maximum numerical fidelity is
+required. Quantized inference is a better fit for a free-tier public demo where the priority
+is keeping the service responsive and lightweight enough to run in a constrained container.
+
+### Chunking instead of truncating long documents
+
+RoBERTa has a fixed token limit, so long documents cannot be passed through the classifier
+as one input. The simplest option would be truncation, but truncation discards most of a
+long document and can hide the parts that matter.
+
+This project uses overlapping token windows instead. That makes the analysis more useful:
+the backend scores the full document in segments, aggregates the probabilities, and reports
+groups of neighboring chunks with unusually high AI probability. This turns the app from a
+single-score demo into a tool that can help a user inspect where the signal appears.
+
+## 29. API Response Design
 
 The backend response is intentionally verbose enough for the UI and future extensions.
 
@@ -1108,7 +1242,7 @@ The frontend currently displays:
 - `chunk_results`
 - `notes`, only when present
 
-## 29. Known Limitations
+## 30. Known Limitations
 
 The model has real limitations:
 
@@ -1121,7 +1255,7 @@ The model has real limitations:
 
 The frontend and model card preserve this framing.
 
-## 30. Future Improvements
+## 31. Future Improvements
 
 Possible future upgrades:
 
