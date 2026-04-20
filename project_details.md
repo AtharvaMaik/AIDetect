@@ -848,60 +848,190 @@ This is compatible with Hugging Face Docker Spaces because Spaces expose a web a
 
 ## 24. Hugging Face Spaces Deployment
 
-The root `README.md` includes Hugging Face Space metadata:
+The backend is deployed as a public Hugging Face Docker Space:
+
+```text
+Space repository: https://huggingface.co/spaces/clashking/AIDetect
+Live API: https://clashking-aidetect.hf.space
+Health check: https://clashking-aidetect.hf.space/health
+```
+
+The root `README.md` contains the Space metadata that Hugging Face reads when building
+the app:
 
 ```yaml
 ---
 title: RoBERTa AI Text Detector API
-colorFrom: teal
+colorFrom: green
 colorTo: red
 sdk: docker
 app_port: 7860
 ---
 ```
 
-Hugging Face uses this metadata to understand that the repo is a Docker Space and that the app listens on port 7860.
+Hugging Face uses that metadata to identify the repository as a Docker Space and route
+traffic to port `7860`, which is the port exposed by the FastAPI container.
 
-Recommended Space setup:
+The deployment used the locally authenticated Hugging Face CLI and Python client. The
+token was never written into the project files, committed, printed into documentation, or
+added to the public repository.
 
-1. Create a new Hugging Face Space.
-2. Choose Docker as the SDK.
-3. Push this repository content to the Space repository.
-4. Make sure Git LFS is enabled for `model.safetensors`.
-5. Keep `USE_QUANTIZED=true` for free CPU inference.
-6. Open `/health` on the Space URL to confirm the backend is alive.
+The Space was created with:
 
-Example Space URL:
-
-```text
-https://your-space-name.hf.space
+```powershell
+hf repo create clashking/AIDetect --repo-type space --space_sdk docker --exist-ok
 ```
 
-Example health URL:
+The first attempt to push the Space through Git ran into the existing starter commit in
+the Hugging Face Space repository, and a larger Git push timed out. To avoid fighting the
+Space Git history and to keep the deployment moving, the project was uploaded with
+`huggingface_hub.HfApi.upload_folder` instead:
+
+```python
+from huggingface_hub import HfApi
+
+api = HfApi()
+api.upload_folder(
+    repo_id="clashking/AIDetect",
+    repo_type="space",
+    folder_path=".",
+    commit_message="Deploy RoBERTa detector Space",
+    ignore_patterns=[
+        ".git/*",
+        ".pytest_cache/*",
+        "frontend/node_modules/*",
+        "frontend/dist/*",
+        "**/__pycache__/*",
+        "**/*.log",
+        "notebooks/*",
+        "samples/*",
+        "docs/superpowers/*",
+        "scripts/*",
+    ],
+)
+```
+
+The ignored paths are local development artifacts, generated frontend output, notebooks,
+scratch samples, logs, Python caches, and local-only helper material that is not needed
+for the hosted backend.
+
+One Hugging Face metadata validation issue appeared during deployment: `colorFrom: teal`
+is not a valid Space metadata color. It was changed to `colorFrom: green`, after which
+the Space accepted and built the project.
+
+The initial backend upload landed at this Space commit:
 
 ```text
-https://your-space-name.hf.space/health
+https://huggingface.co/spaces/clashking/AIDetect/commit/5bc19107c1a58ea51c96656d893d447cb10f306b
+```
+
+After the live app was working, documentation updates were synced back to the Space with
+`HfApi.upload_file` so the public Space repository stayed aligned with GitHub:
+
+```python
+from huggingface_hub import HfApi
+
+api = HfApi()
+api.upload_file(
+    path_or_fileobj="project_details.md",
+    path_in_repo="project_details.md",
+    repo_id="clashking/AIDetect",
+    repo_type="space",
+    commit_message="Update project details",
+)
+```
+
+The backend deployment was verified by requesting:
+
+```text
+https://clashking-aidetect.hf.space/health
+```
+
+The expected response confirms that the API process is alive, the model path exists, and
+CPU dynamic quantization is enabled:
+
+```json
+{
+  "status": "ok",
+  "model_path_exists": true,
+  "quantization_enabled": true
+}
 ```
 
 ## 25. Vercel Deployment
 
-The frontend should be deployed separately to Vercel.
-
-Vercel settings:
+The React frontend is deployed separately to Vercel:
 
 ```text
-Root directory: frontend
-Build command: npm run build
-Output directory: dist
+Live frontend: https://frontend-navy-seven-60.vercel.app
+Vercel project: frontend
+Vercel account/team: atharvas-projects-390e680b
+Backend used by the live frontend: https://clashking-aidetect.hf.space
 ```
 
-Environment variable:
+The first Vercel deployment attempt was run from the repository root:
+
+```powershell
+npx vercel deploy --prod --yes
+```
+
+That attempt was not kept because Vercel auto-detected both frontend and backend services
+and inferred an invalid project setup for this repository. The root `vercel.json` was
+cleaned up, and the frontend was given its own Vercel configuration file at
+`frontend/vercel.json`:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite"
+}
+```
+
+The production deployment was then run from the frontend directory:
+
+```powershell
+cd C:\Projects\PROJECTSEM7\frontend
+cmd /c npx vercel deploy --prod --yes
+```
+
+Vercel built the Vite app with `npm run build`, published the `dist` directory, and
+created the production deployment. The deployment URL was then given the stable public
+alias:
 
 ```text
-VITE_API_URL=https://your-space-name.hf.space
+https://frontend-navy-seven-60.vercel.app
 ```
 
-The frontend does not contain the model. It only calls the backend API.
+The frontend is configured so production builds call the live Hugging Face API even if no
+public Vercel environment variable is set. The relevant logic is in `frontend/src/api.ts`:
+
+```ts
+const API_URL =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? "https://clashking-aidetect.hf.space" : "http://127.0.0.1:7860");
+```
+
+This gives the app three useful behaviors:
+
+1. Local development can still use `http://127.0.0.1:7860`.
+2. Vercel production uses `https://clashking-aidetect.hf.space` by default.
+3. A future deployment can override the backend with `VITE_API_URL` without editing code.
+
+The live frontend was verified by opening the Vercel URL, submitting text for analysis,
+and confirming that the UI received a model verdict from the Hugging Face backend.
+
+No model weights are included in the Vercel deployment. The browser only downloads the
+static React app and calls the backend API.
+
+Deployment safety checks:
+
+1. `.vercel/` is ignored so local Vercel project metadata is not committed.
+2. `.env` and `.env.local` are ignored so local credentials are not committed.
+3. Hugging Face authentication is handled by the local CLI/client session, not by source files.
+4. Secret scans were run before publishing to check for common token patterns such as
+   `hf_`, `github_pat_`, `ghp_`, `sk-`, `TOKEN=`, `PASSWORD=`, and `SECRET=`.
 
 ## 26. GitHub and Git LFS
 
