@@ -20,6 +20,19 @@ ALLOWED_ORIGINS=*
 
 The Space exposes FastAPI on port `7860`. Free CPU Spaces can sleep when unused, so the frontend includes a backend readiness state.
 
+For this project, the intended Space is:
+
+```text
+clashking/AIDetect
+```
+
+After logging in locally with `hf auth login`, deploy it with:
+
+```powershell
+cd C:\Projects\PROJECTSEM7
+.\scripts\deploy_huggingface.ps1
+```
+
 ## Frontend on Vercel
 
 1. Import this repository into Vercel.
