@@ -8,6 +8,9 @@ app_port: 7860
 
 # RoBERTa AI Text Detector
 
+![Language](https://img.shields.io/badge/Language-Jupyter%20Notebook-blue)
+![License](https://img.shields.io/badge/License-No%20license%20specified-lightgrey)
+
 A deployed full-stack machine learning product that detects AI-generated writing with a fine-tuned RoBERTa classifier, long-document token chunking, suspicious-region grouping, a FastAPI inference backend, and a polished React interface.
 
 This project is intentionally more than a notebook. It takes a trained transformer model all the way to a public product: model packaging, API design, CPU quantization, Docker deployment, frontend integration, live hosting, documentation, and responsible-use framing.
@@ -132,3 +135,13 @@ Set `VITE_API_URL` in `frontend/.env.local` when the backend is not running on `
 ## Responsible Use
 
 The model returns probabilistic signals, not proof of authorship. AI-text detection can be brittle across writing domains, editing styles, and short inputs. Use the output as a review aid, especially for long documents where chunk-level patterns can be more informative than a single document-level label.
+
+## Contributing
+
+Contributions are welcome. You can help by reporting bugs, suggesting features, improving documentation, or opening pull requests.
+
+1. Fork the repository.
+2. Create a feature branch.
+3. Make a focused change.
+4. Test the project locally when possible.
+5. Open a pull request with a clear summary of what changed.
