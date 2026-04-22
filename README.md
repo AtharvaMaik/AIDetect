@@ -8,6 +8,13 @@ app_port: 7860
 
 # RoBERTa AI Text Detector
 
+![Language](https://img.shields.io/badge/Language-Jupyter%20Notebook-blue)
+![Language](https://img.shields.io/badge/Language-Python-blue)
+![Language](https://img.shields.io/badge/Language-TypeScript-blue)
+![Language](https://img.shields.io/badge/Language-JavaScript-blue)
+![Language](https://img.shields.io/badge/Language-Dockerfile-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+
 System.Object[]
 
 A deployed full-stack machine learning product that detects AI-generated writing with a fine-tuned RoBERTa classifier, long-document token chunking, suspicious-region grouping, a FastAPI inference backend, and a polished React interface.
