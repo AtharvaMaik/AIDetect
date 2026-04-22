@@ -15,8 +15,6 @@ app_port: 7860
 ![Language](https://img.shields.io/badge/Language-Dockerfile-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-System.Object[]
-
 A deployed full-stack machine learning product that detects AI-generated writing with a fine-tuned RoBERTa classifier, long-document token chunking, suspicious-region grouping, a FastAPI inference backend, and a polished React interface.
 
 This project is intentionally more than a notebook. It takes a trained transformer model all the way to a public product: model packaging, API design, CPU quantization, Docker deployment, frontend integration, live hosting, documentation, and responsible-use framing.
